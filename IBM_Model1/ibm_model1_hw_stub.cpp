@@ -28,12 +28,15 @@ using namespace std;
 #define VO_SIZE 3
 #define D_SIZE 2
 
-
+#define MAX_ITERATION 3
 vector<string> VS(VS_SIZE); // S vocab: VS[x] gives Src word coded by x 
 vector<string> VO(VO_SIZE); // O vocab: VO[x] gives Obs word coded by x
 
 vector<vector<int> > S(D_SIZE); // all S sequences; in this case 2
 vector<vector<int> > O(D_SIZE); // all O sequences; in this case 2
+
+double count[VO_SIZE][VS_SIZE];
+double probability[VO_SIZE][VS_SIZE];
 
 // sets S[0] and S[1] to be the int vecs representing the S sequences
 // sets O[0] and O[1] to be the int vecs representing the O sequences
@@ -51,7 +54,68 @@ main() {
   // guts of it to go here
   // you may well though want to set up further global data structures
   // and functions which access them 
-  // TODO
+
+  // initialise tr(o|s) uniformly
+  for(int i = 0; i < VO,size(); i++){
+    for(auto j= 0; j < VS,size(); j++){
+      probability[i][j] = 1.0/3.0;
+    }
+  }
+
+  // repeat [E] followed by [M] till convergence
+  for(int c = 0; c<MAX_ITERATION; c++){
+
+    //[E ]
+    for(int i = 0; i < VO,size(); i++){
+      for(auto j= 0; j < VS,size(); j++){
+        count[i][j] = 0;
+      }
+    }
+
+    std::vector<int> obs, src;
+
+    for(int i = 0; i < D_SIZE; i++){
+      obs = O[i];
+      src = S[i];
+
+      for(int j = 0; j<obs.size(); j++){
+        int obs_word = obs[j];
+        double prob_obs_word = 0.0;
+
+        for(int k = 0; k < src.size(); k++){
+          int src_word = src[k];
+          prob_obs_word += probability[obs_word][src_word];
+        }
+
+        for(int l = 0; l < src.size(); l++){
+          int src_word = src[l];
+          if(probability > 0 ) count[obs_word][src_word] += probability[obs_word][src_word]/prob_obs_word;
+          else count[obs_word][src_word] += 0; 
+        }
+      }
+
+      for(int s = 0; s < VS_SIZE; s++){
+        double normalise_factor = 0.0;
+
+        for(int o = 0; o < VO_SIZE; o++){
+          normalise_factor +=  count[o][s];
+        }
+
+        if(normalise_factor > 0){
+          for (int o = 0; o<VS_SIZE; o++){
+            probability[o][s] = count[o][s] / normalise_factor;
+          }
+        }
+
+        else{
+          for (int o = 0; o<VS_SIZE; o++){
+            probability[o][s] = normalise_factor;
+          }
+        }
+      }
+    }
+  }
+  
 }
 
 void create_vocab_and_data() {
