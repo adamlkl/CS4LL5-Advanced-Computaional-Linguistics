@@ -115,7 +115,6 @@ main() {
         }
       }
     }
-  
 
     cout << "expected count" << endl;
     for(int x = 0; x < VO_SIZE; x++){
