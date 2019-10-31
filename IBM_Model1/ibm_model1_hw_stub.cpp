@@ -35,7 +35,7 @@ vector<string> VO(VO_SIZE); // O vocab: VO[x] gives Obs word coded by x
 vector<vector<int> > S(D_SIZE); // all S sequences; in this case 2
 vector<vector<int> > O(D_SIZE); // all O sequences; in this case 2
 
-double count[VO_SIZE][VS_SIZE];
+double exp_count[VO_SIZE][VS_SIZE];
 double probability[VO_SIZE][VS_SIZE];
 
 // sets S[0] and S[1] to be the int vecs representing the S sequences
@@ -56,8 +56,8 @@ main() {
   // and functions which access them 
 
   // initialise tr(o|s) uniformly
-  for(int i = 0; i < VO,size(); i++){
-    for(auto j= 0; j < VS,size(); j++){
+  for(int i = 0; i < VO_SIZE; i++){
+    for(auto j= 0; j < VS_SIZE; j++){
       probability[i][j] = 1.0/3.0;
     }
   }
@@ -66,13 +66,14 @@ main() {
   for(int c = 0; c<MAX_ITERATION; c++){
 
     //[E ]
-    for(int i = 0; i < VO,size(); i++){
-      for(auto j= 0; j < VS,size(); j++){
-        count[i][j] = 0;
+    for(int i = 0; i < VO_SIZE; i++){
+      for(auto j= 0; j < VS_SIZE; j++){
+        exp_count[i][j] = 0;
       }
     }
 
-    std::vector<int> obs, src;
+    std::vector<int> obs; 
+    std::vector<int> src;
 
     for(int i = 0; i < D_SIZE; i++){
       obs = O[i];
@@ -89,33 +90,49 @@ main() {
 
         for(int l = 0; l < src.size(); l++){
           int src_word = src[l];
-          if(probability > 0 ) count[obs_word][src_word] += probability[obs_word][src_word]/prob_obs_word;
-          else count[obs_word][src_word] += 0; 
-        }
-      }
-
-      for(int s = 0; s < VS_SIZE; s++){
-        double normalise_factor = 0.0;
-
-        for(int o = 0; o < VO_SIZE; o++){
-          normalise_factor +=  count[o][s];
-        }
-
-        if(normalise_factor > 0){
-          for (int o = 0; o<VS_SIZE; o++){
-            probability[o][s] = count[o][s] / normalise_factor;
-          }
-        }
-
-        else{
-          for (int o = 0; o<VS_SIZE; o++){
-            probability[o][s] = normalise_factor;
-          }
+          if(probability[obs_word][src_word] > 0 ) exp_count[obs_word][src_word] += probability[obs_word][src_word]/prob_obs_word;
+          else exp_count[obs_word][src_word] += 0; 
         }
       }
     }
-  }
+
+    for(int s = 0; s < VS_SIZE; s++){
+      double normalise_factor = 0.0;
+
+      for(int o = 0; o < VO_SIZE; o++){
+        normalise_factor +=  exp_count[o][s];
+      }
+
+      if(normalise_factor > 0){
+        for (int o = 0; o<VO_SIZE; o++){
+          probability[o][s] = exp_count[o][s] / normalise_factor;
+        }
+      }
+
+      else{
+        for (int o = 0; o<VO_SIZE; o++){
+          probability[o][s] = normalise_factor;
+        }
+      }
+    }
   
+
+    cout << "expected count" << endl;
+    for(int x = 0; x < VO_SIZE; x++){
+      for(int y = 0; y < VS_SIZE; y++){
+        cout << exp_count[x][y] << " | "; 
+      }
+      cout << endl; 
+    }
+
+    cout << "tr(o|s)" << endl;
+    for(int x = 0; x < VO_SIZE; x++){
+      for(int y = 0; y < VS_SIZE; y++){
+        cout << probability[x][y] << " | "; 
+      }
+      cout << endl; 
+    }  
+  }
 }
 
 void create_vocab_and_data() {
@@ -129,12 +146,12 @@ void create_vocab_and_data() {
   VO[FLOWER] = "flower";
 
   cout << "source vocab\n";
-  for(int vi=0; vi < VS.size(); vi++) {
+  for(int vi=0; vi < VS_SIZE; vi++) {
     cout << VS[vi] << " ";
   }
   cout << endl;
   cout << "observed vocab\n";
-  for(int vj=0; vj < VO.size(); vj++) {
+  for(int vj=0; vj < VO_SIZE; vj++) {
     cout << VO[vj] << " ";
   }
   cout << endl;
